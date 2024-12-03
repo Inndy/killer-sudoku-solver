@@ -404,14 +404,15 @@ const copyConstraints = async () => {
 <template lang="pug">
 .killer-sudoku
   .controls
-    input(
-      type="number"
-      placeholder="Cage sum"
-      v-model="cageSum"
-      @keyup.enter="createCage"
-    )
-    button(@click="createCage") Create Cage
-    button(@click="solve") Solve
+    .input-group
+      input.cage-sum-input(
+        type="number"
+        placeholder="Cage sum"
+        v-model="cageSum"
+        @keyup.enter="createCage"
+      )
+      button.primary(@click="createCage") Create Cage
+      button.secondary(@click="solve") Solve
     textarea.constraints(
       :value="exportConstraints()"
       rows="3"
@@ -444,31 +445,94 @@ const copyConstraints = async () => {
 .killer-sudoku
   display: flex
   flex-direction: column
-  gap: 20px
-  padding: 20px
+  gap: 24px
+  padding: 32px
+  max-width: 900px
+  margin: 0 auto
+
+.controls
+  display: flex
+  flex-direction: column
+  gap: 16px
+
+  .input-group
+    display: flex
+    gap: 12px
+    align-items: center
+
+    .cage-sum-input
+      padding: 8px 12px
+      border: 2px solid #ddd
+      border-radius: 6px
+      font-size: 16px
+      width: 120px
+
+      &:focus
+        border-color: #666
+        outline: none
+
+  button
+    padding: 8px 16px
+    border: none
+    border-radius: 6px
+    font-size: 16px
+    cursor: pointer
+    transition: all 0.2s ease
+
+    &.primary
+      background: #4CAF50
+      color: white
+
+      &:hover
+        background: #45a049
+
+    &.secondary
+      background: #2196F3
+      color: white
+
+      &:hover
+        background: #1e88e5
+
+  .constraints
+    flex: 1
+    font-family: monospace
+    padding: 12px
+    border: 2px solid #ddd
+    border-radius: 6px
+    resize: vertical
+    min-height: 80px
+    font-size: 14px
+
+    &:focus
+      border-color: #666
+      outline: none
 
 .board
   display: grid
   grid-template-columns: repeat(9, 1fr)
   gap: 1px
-  background: #000
-  width: 900px
-  height: 900px
+  background: #333
+  aspect-ratio: 1
+  width: 100%
   user-select: none
+  border-radius: 8px
+  overflow: hidden
 
 .cell
-  background: #f0f0f0
+  background: #fff
   display: flex
   align-items: center
   justify-content: center
   position: relative
+  transition: background-color 0.2s ease
 
   .cage-sum
     position: absolute
-    top: 5px
-    left: 5px
-    font-size: 12px
+    top: 6px
+    left: 6px
+    font-size: 13px
     font-weight: bold
+    color: #333
 
   input
     width: 90%
@@ -476,22 +540,15 @@ const copyConstraints = async () => {
     border: none
     background: transparent
     text-align: center
-    font-size: 20px
+    font-size: 24px
+    color: #333
+    font-weight: 500
+
+    &:focus
+      outline: none
 
     &::-webkit-outer-spin-button,
     &::-webkit-inner-spin-button
       -webkit-appearance: none
       margin: 0
-
-.controls
-  display: flex
-  gap: 10px
-
-  button
-    padding: 8px 16px
-
-  .constraints
-    flex: 1
-    font-family: monospace
-    padding: 8px
 </style>
