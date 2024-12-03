@@ -141,7 +141,124 @@ const updateCell = (index, value) => {
   board.value[index] = value
 }
 
-// Generate constraints for basic Sudoku rules
+// Check if a number is valid in a given position
+const isValidMove = (index, num) => {
+  const row = Math.floor(index / 9)
+  const col = index % 9
+  const boxRow = Math.floor(row / 3) * 3
+  const boxCol = Math.floor(col / 3) * 3
+
+  // Check row
+  for (let c = 0; c < 9; c++) {
+    if (c !== col && board.value[row * 9 + c] === num) return false
+  }
+
+  // Check column
+  for (let r = 0; r < 9; r++) {
+    if (r !== row && board.value[r * 9 + col] === num) return false
+  }
+
+  // Check 3x3 box
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      const checkIndex = (boxRow + r) * 9 + (boxCol + c)
+      if (checkIndex !== index && board.value[checkIndex] === num) return false
+    }
+  }
+
+  // Check cage sum and remaining possibilities
+  const cage = cages.value.find(c => c.cells.includes(index))
+  if (cage) {
+    // Calculate current sum and remaining empty cells
+    let currentSum = 0
+    let emptyCells = []
+    for (const cellIndex of cage.cells) {
+      if (cellIndex === index) {
+        currentSum += num
+      } else if (board.value[cellIndex] === 0) {
+        emptyCells.push(cellIndex)
+      } else {
+        currentSum += board.value[cellIndex]
+      }
+    }
+
+    // If sum already exceeds target, invalid
+    if (currentSum > cage.sum) return false
+
+    // If no empty cells left, must equal target sum
+    if (emptyCells.length === 0 && currentSum !== cage.sum) return false
+
+    // Check if remaining sum is possible with remaining cells
+    const remainingSum = cage.sum - currentSum
+    if (emptyCells.length > 0) {
+      // Minimum possible sum (using 1s)
+      const minPossible = emptyCells.length
+      // Maximum possible sum (using 9s)
+      const maxPossible = emptyCells.length * 9
+
+      if (remainingSum < minPossible || remainingSum > maxPossible) return false
+    }
+  }
+
+  return true
+}
+
+// Find best empty cell to try next
+const findBestEmptyCell = () => {
+  let bestCell = -1
+  let minPossibilities = 10
+
+  for (let i = 0; i < 81; i++) {
+    if (board.value[i] === 0) {
+      let possibilities = 0
+      for (let num = 1; num <= 9; num++) {
+        if (isValidMove(i, num)) possibilities++
+      }
+      if (possibilities < minPossibilities) {
+        minPossibilities = possibilities
+        bestCell = i
+      }
+      // Optimization: if we found a cell with only one possibility, use it
+      if (minPossibilities === 1) break
+    }
+  }
+  return bestCell
+}
+
+// Solve the puzzle using optimized backtracking
+const solve = () => {
+  const emptyCell = findBestEmptyCell()
+  if (emptyCell === -1) return true // Puzzle completed
+
+  // Get the cage containing this cell if any
+  const cage = cages.value.find(c => c.cells.includes(emptyCell))
+
+  // Try numbers in an optimized order based on cage constraints
+  let numbers = []
+  if (cage) {
+    // Calculate remaining sum needed
+    const currentSum = cage.cells.reduce((sum, cell) =>
+      sum + (cell === emptyCell ? 0 : board.value[cell]), 0)
+    const remainingSum = cage.sum - currentSum
+
+    // Filter possible numbers based on remaining sum
+    numbers = Array.from({ length: 9 }, (_, i) => i + 1)
+      .filter(n => n <= remainingSum)
+  } else {
+    numbers = Array.from({ length: 9 }, (_, i) => i + 1)
+  }
+
+  for (const num of numbers) {
+    if (isValidMove(emptyCell, num)) {
+      board.value[emptyCell] = num
+      if (solve()) return true
+      board.value[emptyCell] = 0 // Backtrack
+    }
+  }
+  return false
+}
+
+// Generate constraints for export
 const generateBasicConstraints = () => {
   const constraints = []
 
@@ -294,6 +411,7 @@ const copyConstraints = async () => {
       @keyup.enter="createCage"
     )
     button(@click="createCage") Create Cage
+    button(@click="solve") Solve
     textarea.constraints(
       :value="exportConstraints()"
       rows="3"
