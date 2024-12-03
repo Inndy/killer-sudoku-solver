@@ -243,6 +243,19 @@ const importConstraints = (text) => {
   }
 }
 
+// Handle textarea click to copy constraints
+const copyConstraints = async () => {
+  const textarea = document.querySelector('.constraints')
+  textarea.select()
+  // Only copy if HTTPS
+  if (window.location.protocol === 'https:') {
+    try {
+      await navigator.clipboard.writeText(textarea.value)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+}
 </script>
 
 <template lang="pug">
@@ -257,9 +270,10 @@ const importConstraints = (text) => {
     button(@click="createCage") Create Cage
     textarea.constraints(
       :value="exportConstraints()"
-      rows="10"
+      rows="3"
       placeholder="Constraints will appear here"
       @input="importConstraints($event.target.value)"
+      @click="copyConstraints"
     )
 
   .board(@mouseup="onMouseUp" @mouseleave="onMouseUp")
@@ -294,8 +308,8 @@ const importConstraints = (text) => {
   grid-template-columns: repeat(9, 1fr)
   gap: 1px
   background: #000
-  width: 1080px
-  height: 1080px
+  width: 900px
+  height: 900px
   user-select: none
 
 .cell
@@ -334,7 +348,6 @@ const importConstraints = (text) => {
 
   .constraints
     flex: 1
-    min-height: 200px
     font-family: monospace
     padding: 8px
 </style>
