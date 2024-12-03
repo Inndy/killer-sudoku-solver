@@ -186,6 +186,29 @@ const generateBasicConstraints = () => {
 
   return constraints
 }
+
+const pythonSolverCodeTemplate = `
+from z3 import Int, Solver
+
+solver = Solver()
+
+board = [ Int('b%d' % i) for i in range(81) ]
+
+def AllDifferent(*cells):
+    for i in cells:
+        for j in cells:
+            if i is not j:
+                solver.add(i != j)
+    return True
+
+# PUT CONSTRAINTS HERE
+
+print(solver.check())
+m = solver.model()
+for i, b in enumerate(board):
+    print(m[b],end='\\n' if i % 9 == 8 else '')
+`
+
 // Export all constraints
 const exportConstraints = () => {
   const basicConstraints = generateBasicConstraints()
@@ -194,13 +217,16 @@ const exportConstraints = () => {
     return `${cells} == ${cage.sum}`
   })
 
-  const allConstraints = [
-    '# Basic Sudoku constraints',
-    ...(basicConstraints.map(c => `solver.add(${c})`)),
-    '',
-    '# Killer cage constraints',
-    ...(killerConstraints.map(c => `solver.add(${c})`))
-  ].join('\n')
+  const allConstraints = pythonSolverCodeTemplate.trim().replace(
+    '# PUT CONSTRAINTS HERE',
+    [
+      '# Basic Sudoku constraints',
+      ...(basicConstraints.map(c => `solver.add(${c})`)),
+      '',
+      '# Killer cage constraints',
+      ...(killerConstraints.map(c => `solver.add(${c})`))
+    ].join('\n')
+  )
 
   return allConstraints
 }
@@ -220,7 +246,7 @@ const importConstraints = (text) => {
       continue
     }
 
-    if (!line.trim()) continue
+    if (!line.trim() || !line.startsWith('solver.add')) continue
 
     if (currentSection.includes('Killer cage')) {
       // Parse killer cage constraint
